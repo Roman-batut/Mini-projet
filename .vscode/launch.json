@@ -1,0 +1,13 @@
+{
+    "configurations": [
+
+        {
+            "type": "java",
+            "name": "Launch Main",
+            "request": "launch",
+            "mainClass": "cs107.Main",
+            "projectName": "Mini-projet_17b300fb",
+            "vmArgs": "-enableassertions"
+        },
+    ]
+}
