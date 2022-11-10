@@ -26,12 +26,9 @@ public final class ArrayUtils {
      * @throws AssertionError if one of the parameters is null
      */
     public static boolean equals(byte[] a1, byte[] a2){
-        for (int elem1 : a1){
-            for (int elem2 : a2){
-                if (elem1 != elem2){
-                    return false;
-                }
-            }
+        for (int i = 0; i < a1.length; i++) {
+            if(a1[i] != a2[i])
+                return false;
         }
 
         return true;
@@ -45,11 +42,9 @@ public final class ArrayUtils {
      * @throws AssertionError if one of the parameters is null
      */
     public static boolean equals(byte[][] a1, byte[][] a2){
-        for (byte[] elem1 : a1){
-            for (byte[] elem2 : a2){
-                if (!equals(elem2, elem1)){
-                    return false;
-                }
+        for (int i = 0; i < a1.length; i++) {
+            if(!equals(a1[i], a2[i])){
+                return false;
             }
         }
 
@@ -318,6 +313,32 @@ public final class ArrayUtils {
             }
         }
 
+        return tab;
+    }
+
+    // ==================================================================================
+    // ============================ STUDENT'S ADDED METHODS =============================
+    // ==================================================================================
+
+    /**
+     * Casts a byte[] to a Byte[]
+     */
+    public static Byte[] cast(byte[] bytes){
+        Byte[] tab = new Byte[bytes.length];
+        for(int i=0 ; i<bytes.length ; ++i){
+            tab[i] = bytes[i];
+        }
+        return tab;
+    }
+
+    /**
+     * Casts a Byte[] to a byte[]
+     */
+    public static byte[] cast(Byte[] bytes){
+        byte[] tab = new byte[bytes.length];
+        for(int i=0 ; i<bytes.length ; ++i){
+            tab[i] = bytes[i];
+        }
         return tab;
     }
 

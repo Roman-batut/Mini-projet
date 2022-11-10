@@ -72,15 +72,11 @@ public final class Main {
         assert testQoiHeader();
         assert testQoiOpRGB();
         assert testQoiOpRGBA();
-
-        // TestEncoder QoiOpIndex
-        assert testQoiOpIndex();
-        for(byte elem : QOIEncoder.qoiOpIndex((byte) 63))System.out.println(elem);
-        
-        //assert testQoiOpDiff();
-        //assert testQoiOpLuma();
-        //assert testQoiOpRun();
-        //assert testEncodeData();
+        assert testQoiOpIndex();        
+        assert testQoiOpDiff();
+        assert testQoiOpLuma();
+        assert testQoiOpRun();
+        assert testEncodeData();
 
         // ========== Test QOIDecoder ==========
         //assert testDecodeHeader();
