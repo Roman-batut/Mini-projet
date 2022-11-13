@@ -2,9 +2,6 @@ package cs107;
 
 import static cs107.Helper.Image;
 
-import javax.crypto.spec.PSource;
-import javax.swing.text.Position;
-
 /**
  * "Quite Ok Image" Decoder
  * @apiNote Third task of the 2022 Mini Project
@@ -67,7 +64,7 @@ public final class QOIDecoder {
         assert ArrayUtils.extract(input, idx, input.length-idx).length >= 3;
 
         byte[] tab = ArrayUtils.extract(input, idx, 3);
-        buffer[position] = ArrayUtils.concat(tab[0], tab[1], tab[2], alpha);
+        buffer[position] = ArrayUtils.concat(tab, ArrayUtils.wrap(alpha));
 
         return QOISpecification.RGB;
     }
@@ -101,9 +98,9 @@ public final class QOIDecoder {
         final byte decal = 0b00_00_00_10;
 
         byte[] diff = new byte[4];
-        for(int i=0; i<3 ; ++i){
-            diff[i] = (byte) (((chunk & (0b00_00_00_11 << (i*2))) >> (i*2)) - decal);
-        }
+        diff[2] = (byte) ((chunk & 0b00_00_00_11) - decal);
+        diff[1] = (byte) (byte) (((chunk & 0b00_00_11_00) >> 2) - decal);
+        diff[0] = (byte) (((chunk & 0b00_11_00_00) >> 4) - decal);
         
         byte[] currentPixel = new byte[4];
         for(int i=0 ; i<previousPixel.length ; ++i){
@@ -205,7 +202,6 @@ public final class QOIDecoder {
                     buffer[position] = pixel;
                     previousPixel = pixel;
 
-                    position++;
                     idx++;
                     break;
                 }
@@ -217,7 +213,6 @@ public final class QOIDecoder {
                     buffer[position] = previousPixel;
                     hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
-                    position++;
                     idx++;
                     break;
                 }
@@ -228,8 +223,7 @@ public final class QOIDecoder {
 
                     buffer[position] = previousPixel;
                     hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
-                    
-                    position++;
+        
                     idx += 2;
                     break;
                 }
@@ -241,22 +235,22 @@ public final class QOIDecoder {
                     switch(tag){
 
                         case QOISpecification.QOI_OP_RGB_TAG -> {
-                            idx += decodeQoiOpRGB(buffer, data, previousPixel[QOISpecification.a], position, idx+1) + 1;
+                            idx += decodeQoiOpRGB(buffer, data, (byte) previousPixel[QOISpecification.a], position, idx+1);
 
-                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
                             previousPixel = buffer[position];
+                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
-                            position++;
+                            idx++;
                             break;
                         }
 
                         case QOISpecification.QOI_OP_RGBA_TAG -> {
-                            idx += decodeQoiOpRGBA(buffer, data, position, idx+1) + 1;
+                            idx += decodeQoiOpRGBA(buffer, data, position, idx+1);
 
-                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
                             previousPixel = buffer[position];
+                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
-                            position++;
+                            idx++;
                             break;
                         }
 
@@ -266,8 +260,7 @@ public final class QOIDecoder {
         
                             position += rep;
                             previousPixel = buffer[position];
-                            
-                            position++;
+                        
                             idx++;
                             break;
                         }
@@ -275,6 +268,7 @@ public final class QOIDecoder {
                 }
             }
 
+            position++;
         }
 
         return buffer;
@@ -288,12 +282,14 @@ public final class QOIDecoder {
      */
     public static Image decodeQoiFile(byte[] content){
         assert content != null;
-        assert ArrayUtils.extract(content, content.length-QOISpecification.QOI_EOF.length, QOISpecification.QOI_EOF.length) == QOISpecification.QOI_EOF;
+        assert ArrayUtils.equals(ArrayUtils.extract(content, content.length-QOISpecification.QOI_EOF.length, QOISpecification.QOI_EOF.length), QOISpecification.QOI_EOF);
 
         int[] header = decodeHeader(ArrayUtils.extract(content, 0, QOISpecification.HEADER_SIZE));
+        int width = header[0];
+        int height = header[1];
 
-        byte[][] data = decodeData(ArrayUtils.extract(content, QOISpecification.HEADER_SIZE, content.length-QOISpecification.HEADER_SIZE-QOISpecification.QOI_EOF.length), header[0], header[1]);
-        int[][] image_data = ArrayUtils.channelsToImage(data, header[0], header[1]);
+        byte[][] data = decodeData(ArrayUtils.extract(content, QOISpecification.HEADER_SIZE, content.length-QOISpecification.HEADER_SIZE-QOISpecification.QOI_EOF.length), width, height);
+        int[][] image_data = ArrayUtils.channelsToImage(data, height, width);
 
         return Helper.generateImage(image_data, (byte) header[2], (byte) header[3]);
     }
