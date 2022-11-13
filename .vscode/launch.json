@@ -1,6 +1,12 @@
 {
     "configurations": [
-
+        {
+            "type": "java",
+            "name": "Launch Submit",
+            "request": "launch",
+            "mainClass": "cs107.Submit",
+            "projectName": "Mini-projet_17b300fb"
+        },
         {
             "type": "java",
             "name": "Launch Main",
@@ -8,6 +14,6 @@
             "mainClass": "cs107.Main",
             "projectName": "Mini-projet_17b300fb",
             "vmArgs": "-enableassertions"
-        },
+        }
     ]
 }
