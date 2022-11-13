@@ -177,7 +177,6 @@ public final class QOIDecoder {
     public static byte[][] decodeData(byte[] data, int width, int height){
         assert data != null;
         assert width > 0 && height > 0;
-        //assert
 
         //* Etape 1
 
@@ -203,7 +202,6 @@ public final class QOIDecoder {
                     previousPixel = pixel;
 
                     idx++;
-                    break;
                 }
 
                 case QOISpecification.QOI_OP_DIFF_TAG -> {
@@ -214,7 +212,6 @@ public final class QOIDecoder {
                     hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
                     idx++;
-                    break;
                 }
 
                 case QOISpecification.QOI_OP_LUMA_TAG -> {
@@ -225,7 +222,6 @@ public final class QOIDecoder {
                     hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
         
                     idx += 2;
-                    break;
                 }
 
                 default -> {
@@ -241,7 +237,6 @@ public final class QOIDecoder {
                             hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
                             idx++;
-                            break;
                         }
 
                         case QOISpecification.QOI_OP_RGBA_TAG -> {
@@ -251,7 +246,6 @@ public final class QOIDecoder {
                             hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
 
                             idx++;
-                            break;
                         }
 
                         default -> {
@@ -262,7 +256,6 @@ public final class QOIDecoder {
                             previousPixel = buffer[position];
                         
                             idx++;
-                            break;
                         }
                     }
                 }
@@ -270,6 +263,8 @@ public final class QOIDecoder {
 
             position++;
         }
+
+        assert position == buffer.length;
 
         return buffer;
     }
