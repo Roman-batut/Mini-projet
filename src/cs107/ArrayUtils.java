@@ -85,7 +85,7 @@ public final class ArrayUtils {
 
         int nb = 0;
         for (int i=0 ; i<bytes.length ; ++i){
-            nb += (bytes[i] << ((bytes.length-1-i) * 8));
+            nb = (nb << 8) | (bytes[i] & 0xFF);
         }
 
         return nb;
@@ -225,7 +225,6 @@ public final class ArrayUtils {
      * or one of the inner arrays of input is null
      */
     public static byte[][] imageToChannels(int[][] input){
-        //Assertions
         assert input != null;
         int[] prevelem = input[0];
         for (int[] elem : input){
@@ -275,7 +274,6 @@ public final class ArrayUtils {
      * or width is invalid
      */
     public static int[][] channelsToImage(byte[][] input, int height, int width){
-        //Assertions
         assert input != null;
         for(byte[] elem : input){
             assert elem != null;
@@ -283,33 +281,21 @@ public final class ArrayUtils {
         }
         assert input.length == height*width;
 
-
         int[][] tab = new int[height][width];
-        int[] pixels = new int[input.length];
+        byte[][] pixels = new byte[input.length][4];
 
         //Transform rgb-a to a-rgb
         for(int i=0 ; i<pixels.length ; ++i){
-            byte[] comps = new byte[4];
-            for(int k=0 ; k<4 ; ++k){
-                switch(k){
-                    case 0 : 
-                    comps[QOISpecification.g] = input[i][k]; break;
-                    case 1 :
-                    comps[QOISpecification.b] = input[i][k]; break;
-                    case 2 :
-                    comps[QOISpecification.a] = input[i][k]; break;
-                    case 3 :
-                    comps[QOISpecification.r] = input[i][k]; break;
-                }
-            }
-            //Transform a-rgb to int
-            pixels[i] = toInt(comps);
+            pixels[i][0] = input[i][QOISpecification.a];
+            pixels[i][1] = input[i][QOISpecification.r];
+            pixels[i][2] = input[i][QOISpecification.g];
+            pixels[i][3] = input[i][QOISpecification.b];
         }
 
-        //Fills tab with transformed pixels
+        //Fills tab with transformed pixels and to Int
         for(int i=0 ; i<height ; ++i){
             for(int j=0 ; j<width ; ++j){
-                tab[i][j] = pixels[j+i*width];
+                tab[i][j] = toInt(pixels[j+i*width]);
             }
         }
 
