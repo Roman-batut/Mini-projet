@@ -175,6 +175,11 @@ public final class QOIEncoder {
      * @return (byte[]) - "Quite Ok Image" representation of the image
      */
     public static byte[] encodeData(byte[][] image){
+        assert image != null;
+        for(byte[] pixel : image){
+            assert pixel != null && pixel.length == 4;
+        }
+
         byte[] prev_pixel = QOISpecification.START_PIXEL;
         byte[][] hash_table = new byte[64][4];
         int count = 0;
@@ -197,7 +202,7 @@ public final class QOIEncoder {
                 }
             }else{
                 if((count > 0 && count < 63) && i != image.length-1){ //<62 ?
-                    encoding.add(ArrayUtils.cast(qoiOpRun((byte) count)));// ptet ?
+                    encoding.add(ArrayUtils.cast(qoiOpRun((byte) count)));
                     count = 0;
                 }
                 if(ArrayUtils.equals(pixel, hash_table[QOISpecification.hash(pixel)])){ //*Etape 2
@@ -253,13 +258,7 @@ public final class QOIEncoder {
 
         byte[] header = qoiHeader(image);
 
-        byte[][] image_data = new byte[image.data().length][image.data()[0].length]; 
-        for(int i = 0; i < image.data().length; i++){
-            for(int j = 0; j < image.data()[0].length; j++){
-                image_data[i][j] = (byte) image.data()[i][j];
-            }
-        }
-        byte[] data = encodeData(image_data);
+        byte[] data = encodeData(ArrayUtils.imageToChannels(image.data()));
         
         byte[] signature = QOISpecification.QOI_EOF;
 

@@ -118,7 +118,7 @@ public final class QOISpecification {
     /**
      * "QOI_OP_RUN" TAG
      */
-    public static final byte QOI_OP_RUN_TAG   = (byte) 0b11_00_00_00;
+    public static final byte QOI_OP_RUN_TAG   = (byte) 0b11_00_00_00; 
 
     // ==================================================================================
     // ======================== "Quite Ok Image" Hash Function ==========================

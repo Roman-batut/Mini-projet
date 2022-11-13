@@ -2,6 +2,9 @@ package cs107;
 
 import static cs107.Helper.Image;
 
+import javax.crypto.spec.PSource;
+import javax.swing.text.Position;
+
 /**
  * "Quite Ok Image" Decoder
  * @apiNote Third task of the 2022 Mini Project
@@ -27,7 +30,20 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.1
      */
     public static int[] decodeHeader(byte[] header){
-        return Helper.fail("Not Implemented");
+        assert header != null;
+        assert header.length == QOISpecification.HEADER_SIZE;
+        assert ArrayUtils.equals(ArrayUtils.extract(header, 0, 4), QOISpecification.QOI_MAGIC);
+        assert header[12] == QOISpecification.RGB || header[12] == QOISpecification.RGBA;
+        assert header[13] == QOISpecification.sRGB || header[13] == QOISpecification.ALL;
+
+        int[] decoded = new int[]{
+                ArrayUtils.toInt(ArrayUtils.extract(header, 4, 4)),
+                ArrayUtils.toInt(ArrayUtils.extract(header, 8, 4)),
+                header[12],
+                header[13]
+        };
+
+        return decoded;
     }
 
     // ==================================================================================
@@ -45,7 +61,15 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.2.1
      */
     public static int decodeQoiOpRGB(byte[][] buffer, byte[] input, byte alpha, int position, int idx){
-        return Helper.fail("Not Implemented");
+        assert buffer != null && input != null;
+        assert position >= 0 && position < buffer.length;
+        assert idx >= 0 && idx < input.length;
+        assert ArrayUtils.extract(input, idx, input.length-idx).length >= 3;
+
+        byte[] tab = ArrayUtils.extract(input, idx, 3);
+        buffer[position] = ArrayUtils.concat(tab[0], tab[1], tab[2], alpha);
+
+        return QOISpecification.RGB;
     }
 
     /**
@@ -58,7 +82,9 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.2.2
      */
     public static int decodeQoiOpRGBA(byte[][] buffer, byte[] input, int position, int idx){
-        return Helper.fail("Not Implemented");
+        decodeQoiOpRGB(buffer, input, input[idx+3], position, idx);
+
+        return QOISpecification.RGBA;
     }
 
     /**
@@ -69,7 +95,22 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.2.4
      */
     public static byte[] decodeQoiOpDiff(byte[] previousPixel, byte chunk){
-        return Helper.fail("Not Implemented");
+        assert previousPixel != null && previousPixel.length == 4;
+        assert (byte) (chunk >>> 6) == (byte) (QOISpecification.QOI_OP_DIFF_TAG >>> 6);
+
+        final byte decal = 0b00_00_00_10;
+
+        byte[] diff = new byte[4];
+        for(int i=0; i<3 ; ++i){
+            diff[i] = (byte) (((chunk & (0b00_00_00_11 << (i*2))) >> (i*2)) - decal);
+        }
+        
+        byte[] currentPixel = new byte[4];
+        for(int i=0 ; i<previousPixel.length ; ++i){
+            currentPixel[i] = (byte) (previousPixel[i] + diff[i]);
+        }
+
+        return currentPixel;
     }
 
     /**
@@ -80,7 +121,24 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.2.5
      */
     public static byte[] decodeQoiOpLuma(byte[] previousPixel, byte[] data){
-        return Helper.fail("Not Implemented");
+        assert previousPixel != null && data != null;
+        assert previousPixel.length == 4;
+        assert (byte) (data[0] >>> 6) == (byte) (QOISpecification.QOI_OP_LUMA_TAG >>> 6);
+
+        final byte decal_g = 0b00_10_00_00;
+        final byte decal = 0b00_00_10_00;
+
+        byte[] diff = new byte[4];
+        diff[1] = (byte) ((data[0] & 0b00_11_11_11) - decal_g);
+        diff[0] = (byte) ((((data[1] & 0b11_11_00_00) >> 4) - decal) + diff[1]);
+        diff[2] = (byte) (((data[1] & 0b00_00_11_11) - decal) + diff[1]);
+
+        byte[] currentPixel = new byte[4];
+        for(int i=0 ; i<previousPixel.length ; ++i){
+            currentPixel[i] = (byte) (previousPixel[i] + diff[i]);
+        }
+
+        return currentPixel;
     }
 
     /**
@@ -93,7 +151,18 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.2.6
      */
     public static int decodeQoiOpRun(byte[][] buffer, byte[] pixel, byte chunk, int position){
-        return Helper.fail("Not Implemented");
+        assert buffer != null && pixel != null;
+        assert position >= 0 && position <= buffer.length;
+        assert pixel.length == 4;
+        assert buffer[0].length >= pixel.length;
+
+        int rep = chunk & 0b00_11_11_11; 
+
+        for(int i=0 ; i<=rep ; ++i){
+            buffer[position + i] = pixel;
+        }
+
+        return rep;
     }
 
     // ==================================================================================
@@ -109,7 +178,106 @@ public final class QOIDecoder {
      * @throws AssertionError See handouts section 6.3
      */
     public static byte[][] decodeData(byte[] data, int width, int height){
-        return Helper.fail("Not Implemented");
+        assert data != null;
+        assert width > 0 && height > 0;
+        //assert
+
+        //* Etape 1
+
+        byte[] previousPixel = QOISpecification.START_PIXEL;
+        int position = 0;
+        int positionHash;
+        byte[][] hashTable = new byte[64][4];
+        byte[][] buffer = new byte[width*height][4]; //output
+
+        //* Etape 2
+
+        for(int idx=0 ; idx<data.length ;){
+
+            byte tag = (byte) (data[idx] & 0b11_00_00_00);
+
+            switch(tag){
+
+                case QOISpecification.QOI_OP_INDEX_TAG -> {
+                    positionHash = data[idx] & 0b00_11_11_11;
+                    byte[] pixel = hashTable[positionHash]; 
+
+                    buffer[position] = pixel;
+                    previousPixel = pixel;
+
+                    position++;
+                    idx++;
+                    break;
+                }
+
+                case QOISpecification.QOI_OP_DIFF_TAG -> {
+                    byte chunk = data[idx];
+                    previousPixel = decodeQoiOpDiff(previousPixel, chunk);
+
+                    buffer[position] = previousPixel;
+                    hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
+
+                    position++;
+                    idx++;
+                    break;
+                }
+
+                case QOISpecification.QOI_OP_LUMA_TAG -> {
+                    byte[] chunk = new byte[]{data[idx], data[idx+1]};
+                    previousPixel = decodeQoiOpLuma(previousPixel, chunk);
+
+                    buffer[position] = previousPixel;
+                    hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
+                    
+                    position++;
+                    idx += 2;
+                    break;
+                }
+
+                default -> {
+
+                    tag = (byte) (data[idx]);
+
+                    switch(tag){
+
+                        case QOISpecification.QOI_OP_RGB_TAG -> {
+                            idx += decodeQoiOpRGB(buffer, data, previousPixel[QOISpecification.a], position, idx+1) + 1;
+
+                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
+                            previousPixel = buffer[position];
+
+                            position++;
+                            break;
+                        }
+
+                        case QOISpecification.QOI_OP_RGBA_TAG -> {
+                            idx += decodeQoiOpRGBA(buffer, data, position, idx+1) + 1;
+
+                            hashTable[QOISpecification.hash(previousPixel)] = previousPixel;
+                            previousPixel = buffer[position];
+
+                            position++;
+                            break;
+                        }
+
+                        default -> {
+                            byte chunk = (byte) (data[idx] & 0b00_11_11_11);
+                            int rep = decodeQoiOpRun(buffer, previousPixel, chunk, position);
+        
+                            position += rep;
+                            previousPixel = buffer[position];
+                            
+                            position++;
+                            idx++;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return buffer;
     }
 
     /**
@@ -119,7 +287,15 @@ public final class QOIDecoder {
      * @throws AssertionError if content is null
      */
     public static Image decodeQoiFile(byte[] content){
-        return Helper.fail("Not Implemented");
+        assert content != null;
+        assert ArrayUtils.extract(content, content.length-QOISpecification.QOI_EOF.length, QOISpecification.QOI_EOF.length) == QOISpecification.QOI_EOF;
+
+        int[] header = decodeHeader(ArrayUtils.extract(content, 0, QOISpecification.HEADER_SIZE));
+
+        byte[][] data = decodeData(ArrayUtils.extract(content, QOISpecification.HEADER_SIZE, content.length-QOISpecification.HEADER_SIZE-QOISpecification.QOI_EOF.length), header[0], header[1]);
+        int[][] image_data = ArrayUtils.channelsToImage(data, header[0], header[1]);
+
+        return Helper.generateImage(image_data, (byte) header[2], (byte) header[3]);
     }
 
 }
