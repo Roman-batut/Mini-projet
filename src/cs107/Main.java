@@ -40,32 +40,16 @@ public final class Main {
          */
 
         // ========== Test ArrayUtils ==========
-        // TestArrayUtils equals
         assert ArrayUtils.equals(new byte[]{}, new byte[]{});
         assert ArrayUtils.equals(new byte[][]{{}, {}}, new byte[][]{{}, {}});
-
-        // TestArrayUtils wrap
         assert testWrap();
-
-        // TestArrayUtils toInt
         assert testToInt();
-        
-        // TestArrayUtils fromInt
         assert testFromInt();
-        //for(byte elem : ArrayUtils.fromInt(63))System.out.println(elem);;
-
-        // TestArrayUtils Concat
         assert testConcatArrayBytes();
         assert testConcatBytes();
-        
-        // TestArrayUtils Extract & Partition
         assert testExtract();
         assert testPartition();
-
-        // TestArrayUtils ImgToChannels
         assert testImageToChannels();
-
-        // TestArrayUtils ChannelsToImg
         assert testChannelsToImage();
 
         // ========== Test QOIEncoder ==========
@@ -86,6 +70,14 @@ public final class Main {
         assert testDecodeQoiOpLuma();
         assert testDecodeQoiOpRun();
         assert testDecodeData();
+
+        // ============= Test QOI ==============
+        String in = "beach";
+        String file = "references/" + in + ".png"; 
+
+        pngToQoi(file, in + ".qoi");
+        qoiToPng("res/" + in + ".qoi", in + ".png");
+        Diff.diff(file, "res/" + in + ".png");
 
         System.out.println("All the tests passes. Congratulations");
     }
