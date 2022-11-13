@@ -196,12 +196,14 @@ public final class QOIEncoder {
             
             if(ArrayUtils.equals(pixel, prev_pixel)){ //*Etape 1
                 count++;
-                if((count > 0 && count < 63) && i != image.length-1){ //<62 ?
+                if(count >= 62 || i == image.length-1){ //<62 ?
+                    encoding.add(ArrayUtils.cast(qoiOpRun((byte) count)));
                     prev_pixel = pixel;
+                    count = 0;
                     continue;
                 }
             }else{
-                if((count > 0 && count < 63) && i != image.length-1){ //<62 ?
+                if(count != 0){ //<62 ?
                     encoding.add(ArrayUtils.cast(qoiOpRun((byte) count)));
                     count = 0;
                 }
