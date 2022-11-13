@@ -71,7 +71,7 @@ public final class Main {
         assert testDecodeQoiOpRun();
         assert testDecodeData();
 
-        // ============= Test QOI ==============
+        // ============= Test QOI ============== 
         String in = "beach";
         String file = "references/" + in + ".png"; 
 
